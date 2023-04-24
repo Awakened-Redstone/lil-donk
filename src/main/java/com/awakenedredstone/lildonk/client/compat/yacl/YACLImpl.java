@@ -12,7 +12,7 @@ import net.minecraft.text.Text;
 public class YACLImpl {
     public static Screen getScreen() {
         return YetAnotherConfigLib.createBuilder()
-                .title(Text.literal("Random Assistant Config"))
+                .title(Text.literal("Lil' Donk Config"))
                 .category(ConfigCategory.createBuilder()
                         .name(Text.literal("General"))
                         .tooltip(Text.literal("General settings"))
