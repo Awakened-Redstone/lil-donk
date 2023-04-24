@@ -1,0 +1,34 @@
+{
+    "schemaVersion": 1,
+    "id": "lil-donk",
+    "version": "${version}",
+    "name": "Lil' Donk",
+    "description": "Adds Lil' Donk from Vault Hunters to haunt CaptainSparklez",
+    "authors": [
+        "Bawnorton",
+        "Awakened Redstone"
+    ],
+    "contact": {
+        "repo": "https://github.com/Awakened-Redstone/lil-donk"
+    },
+    "license": "MIT",
+    "icon": "assets/lil-donk/icon.png",
+    "environment": "*",
+    "accessWidener": "lildonk.accesswidener",
+    "entrypoints": {
+        "client": [
+            "com.awakenedredstone.lildonk.client.LilDonkClient"
+        ],
+        "main": [
+            "com.awakenedredstone.lildonk.LilDonk"
+        ],
+        "modmenu": [
+            "com.awakenedredstone.lildonk.client.compat.modmenu.LilDonkModMenuApiImpl"
+        ]
+    },
+    "depends": {
+        "fabricloader": ">=${loader_version}",
+        "fabric": "*",
+        "minecraft": "${minecraft_version}"
+    }
+}
