@@ -37,18 +37,7 @@ public class CommandHandler {
     private static int donkSpawn(CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
         if (Config.getInstance().donkEnabled) {
-            source.sendFeedback(Text.of("Lil' Donk enabled"), false);
-            ServerWorld world = source.getWorld();
-            Penguin penguin = new Penguin(Registrar.PENGUIN, world);
-            PlayerEntity player = source.getPlayer();
-            if (player != null) {
-                penguin.updatePosition(player.getX(), player.getY(), player.getZ());
-                penguin.setOwner(player);
-            } else {
-                penguin.updatePosition(world.getSpawnPos().getX(), world.getSpawnPos().getY(), world.getSpawnPos().getZ());
-            }
-            world.spawnEntity(penguin);
-            LilDonk.THE_PENGUIN.put(world, penguin);
+            spawnDonkEntity(source);
         }
         return Config.getInstance().donkEnabled ? 1 : 0;
     }
@@ -58,17 +47,7 @@ public class CommandHandler {
         Config.getInstance().donkEnabled = !Config.getInstance().donkEnabled;
         if (Config.getInstance().donkEnabled) {
             source.sendFeedback(Text.of("Lil' Donk enabled"), false);
-            ServerWorld world = source.getWorld();
-            Penguin penguin = new Penguin(Registrar.PENGUIN, world);
-            PlayerEntity player = source.getPlayer();
-            if (player != null) {
-                penguin.updatePosition(player.getX(), player.getY(), player.getZ());
-                penguin.setOwner(player);
-            } else {
-                penguin.updatePosition(world.getSpawnPos().getX(), world.getSpawnPos().getY(), world.getSpawnPos().getZ());
-            }
-            world.spawnEntity(penguin);
-            LilDonk.THE_PENGUIN.put(world, penguin);
+            spawnDonkEntity(source);
         } else {
             source.sendFeedback(Text.of("Lil' Donk disabled"), false);
             LilDonk.THE_PENGUIN.forEach((world, penguin) -> {
@@ -77,5 +56,19 @@ public class CommandHandler {
         }
         ConfigManager.saveConfig();
         return 1;
+    }
+
+    private static void spawnDonkEntity(ServerCommandSource source) {
+        ServerWorld world = source.getWorld();
+        Penguin penguin = new Penguin(Registrar.PENGUIN, world);
+        PlayerEntity player = source.getPlayer();
+        if (player != null) {
+            penguin.updatePosition(player.getX(), player.getY(), player.getZ());
+            penguin.setOwner(player);
+        } else {
+            penguin.updatePosition(world.getSpawnPos().getX(), world.getSpawnPos().getY(), world.getSpawnPos().getZ());
+        }
+        world.spawnEntity(penguin);
+        LilDonk.THE_PENGUIN.put(world, penguin);
     }
 }
