@@ -21,11 +21,11 @@
         ],
         "main": [
             "com.awakenedredstone.lildonk.LilDonk"
-        ],
-        "modmenu": [
-            "com.awakenedredstone.lildonk.client.compat.modmenu.LilDonkModMenuApiImpl"
         ]
     },
+    "mixins": [
+        "lildonk.mixins.json"
+    ],
     "depends": {
         "fabricloader": ">=${loader_version}",
         "fabric": "*",

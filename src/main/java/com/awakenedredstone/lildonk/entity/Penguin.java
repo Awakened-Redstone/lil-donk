@@ -35,12 +35,14 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.EntityView;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
 import java.util.List;
 
 public class Penguin extends TameableEntity {
+    private static Penguin SERVER_INSTANCE;
+    private static Penguin CLIENT_INSTANCE;
+
     private static final List<Item> temptItems = List.of(Items.TROPICAL_FISH, Items.SALMON, Items.COD);
     private static final Ingredient FOOD_ITEMS = Ingredient.ofStacks(Items.TROPICAL_FISH.getDefaultStack(), Items.SALMON.getDefaultStack(), Items.COD.getDefaultStack());
     private float slideAnimationProgress;
@@ -56,6 +58,13 @@ public class Penguin extends TameableEntity {
         this.lookControl = new PenguinLookControl(this, 20);
         this.setStepHeight(1.0f);
         this.setCanPickUpLoot(true);
+        if(world.isClient) {
+            if(CLIENT_INSTANCE != null) CLIENT_INSTANCE.remove(RemovalReason.DISCARDED);
+            CLIENT_INSTANCE = this;
+        } else {
+            if(SERVER_INSTANCE != null) SERVER_INSTANCE.remove(RemovalReason.DISCARDED);
+            SERVER_INSTANCE = this;
+        }
     }
 
     public static DefaultAttributeContainer.Builder createAttributes() {
@@ -103,7 +112,6 @@ public class Penguin extends TameableEntity {
 
     }
 
-    @Nullable
     @Override
     public PassiveEntity createChild(ServerWorld world, PassiveEntity entity) {
         return Registrar.PENGUIN.create(world);
@@ -136,7 +144,7 @@ public class Penguin extends TameableEntity {
     @Override
     protected void onGrowUp() {
         super.onGrowUp();
-        if (!this.isBaby() && this.world.getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
+        if (!this.isBaby() && this.getWorld().getGameRules().getBoolean(GameRules.DO_MOB_LOOT)) {
             this.dropStack(Items.FEATHER.getDefaultStack(), 1);
         }
     }
@@ -145,7 +153,7 @@ public class Penguin extends TameableEntity {
     public ActionResult interactMob(PlayerEntity player, Hand hand) {
         ItemStack itemStack = player.getStackInHand(hand);
         Item item = itemStack.getItem();
-        if (this.world.isClient) {
+        if (this.getWorld().isClient) {
             return (this.isOwner(player) || this.isTamed() || temptItems.contains(item) && !this.isTamed() && this.getEquippedStack(EquipmentSlot.MAINHAND).isEmpty()) ? ActionResult.CONSUME : ActionResult.PASS;
         }
         if (temptItems.contains(item) && this.getEquippedStack(EquipmentSlot.MAINHAND).isEmpty()) {
@@ -164,34 +172,39 @@ public class Penguin extends TameableEntity {
 
     @Override
     public void tickMovement() {
-        if (world.getTime() % 80L == 0L) {
-            if (this.world.getNonSpectatingEntities(Penguin.class, this.getBoundingBox().expand(20.0D)).size() > 4) {
-                for (PlayerEntity player : this.world.getNonSpectatingEntities(PlayerEntity.class, this.getBoundingBox().expand(10.0D))) {
+        if (getWorld().getTime() % 80L == 0L) {
+            if (this.getWorld().getNonSpectatingEntities(Penguin.class, this.getBoundingBox().expand(20.0D)).size() > 4) {
+                for (PlayerEntity player : this.getWorld().getNonSpectatingEntities(PlayerEntity.class, this.getBoundingBox().expand(10.0D))) {
                     player.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 100, 0, true, true));
                 }
             }
         }
-        if (!this.world.isClient && this.isAlive() && this.canMoveVoluntarily()) {
+        if (!this.getWorld().isClient && this.isAlive() && this.canMoveVoluntarily()) {
             ++this.ticksSinceEaten;
             ItemStack stack = this.getEquippedStack(EquipmentSlot.MAINHAND);
             if (this.canEat(stack)) {
                 if (this.ticksSinceEaten > 600) {
-                    ItemStack finishedStack = stack.finishUsing(this.world, this);
+                    ItemStack finishedStack = stack.finishUsing(this.getWorld(), this);
                     if (!finishedStack.isEmpty()) {
                         this.equipStack(EquipmentSlot.MAINHAND, finishedStack);
                     }
                     this.ticksSinceEaten = 0;
                 } else if (this.ticksSinceEaten > 560 && this.random.nextFloat() < 0.1f) {
                     this.playSound(this.getEatSound(stack), 1.0f, 1.0f);
-                    this.world.sendEntityStatus(this, (byte) 45);
+                    this.getWorld().sendEntityStatus(this, (byte) 45);
                 }
             }
         }
         super.tickMovement();
     }
 
+    @Override
+    protected boolean canStartRiding(Entity entity) {
+        return false;
+    }
+
     private boolean canEat(ItemStack itemStack) {
-        return itemStack.getItem().isFood() && this.getTarget() == null && this.onGround;
+        return itemStack.getItem().isFood() && this.getTarget() == null && this.isOnGround();
     }
 
     @Override
@@ -201,7 +214,7 @@ public class Penguin extends TameableEntity {
             if (!itemStack.isEmpty()) {
                 for (int i = 0; i < 8; ++i) {
                     Vec3d vec3 = new Vec3d(((double) this.random.nextFloat() - 0.5) * 0.1, Math.random() * 0.1 + 0.1, 0.0).rotateX(-this.getPitch() * ((float) Math.PI / 180)).rotateY(-this.getRoll() * ((float) Math.PI / 180));
-                    this.world.addParticle(new ItemStackParticleEffect(ParticleTypes.ITEM, itemStack), this.getX() + this.getRotationVector().x / 2.0, this.getY(), this.getZ() + this.getRotationVector().z / 2.0, vec3.x, vec3.y + 0.05, vec3.z);
+                    this.getWorld().addParticle(new ItemStackParticleEffect(ParticleTypes.ITEM, itemStack), this.getX() + this.getRotationVector().x / 2.0, this.getY(), this.getZ() + this.getRotationVector().z / 2.0, vec3.x, vec3.y + 0.05, vec3.z);
                 }
             }
         } else {
@@ -246,8 +259,8 @@ public class Penguin extends TameableEntity {
     }
 
     private void dropItemStack(ItemStack pStack) {
-        ItemEntity itementity = new ItemEntity(this.world, this.getX(), this.getY(), this.getZ(), pStack);
-        this.world.spawnEntity(itementity);
+        ItemEntity itementity = new ItemEntity(this.getWorld(), this.getX(), this.getY(), this.getZ(), pStack);
+        this.getWorld().spawnEntity(itementity);
     }
 
     // SOUNDS
@@ -268,13 +281,17 @@ public class Penguin extends TameableEntity {
     }
 
     @Override
+    protected void tickPortal() {
+    }
+
+    @Override
     public void tick() {
         if (!Config.getInstance().donkEnabled) {
             this.remove(RemovalReason.DISCARDED);
             return;
         }
         super.tick();
-        if (this.world.isClient) {
+        if (this.getWorld().isClient) {
             if (this.slideAnimationProgress != this.lastSlideAnimationProgress || this.swimAnimationProgress != this.lastSwimAnimationProgress) {
                 this.refreshPosition();
             }
@@ -284,7 +301,7 @@ public class Penguin extends TameableEntity {
     }
 
     public boolean canSlide() {
-        return this.world.getBlockState(this.getBlockPos().down()).isOf(Blocks.ICE) && !this.isInLove() && this.getVelocity().horizontalLengthSquared() > 1.0E-6;
+        return this.getWorld().getBlockState(this.getBlockPos().down()).isOf(Blocks.ICE) && !this.isInLove() && this.getVelocity().horizontalLengthSquared() > 1.0E-6;
     }
 
     private void updateSlidingAnimation() {
@@ -332,7 +349,7 @@ public class Penguin extends TameableEntity {
 
     @Override
     public EntityView method_48926() {
-        return world;
+        return getWorld();
     }
 
     static class PenguinPathNavigation extends MobNavigation {
@@ -420,14 +437,14 @@ public class Penguin extends TameableEntity {
             if (!penguin.getEquippedStack(EquipmentSlot.MAINHAND).isEmpty() || penguin.isBaby()) {
                 return false;
             } else {
-                List<ItemEntity> list = penguin.world.getEntitiesByClass(ItemEntity.class, penguin.getBoundingBox().expand(8.0D, 8.0D, 8.0D), itemEntity -> temptItems.contains(itemEntity.getStack().getItem()));
+                List<ItemEntity> list = penguin.getWorld().getEntitiesByClass(ItemEntity.class, penguin.getBoundingBox().expand(8.0D, 8.0D, 8.0D), itemEntity -> temptItems.contains(itemEntity.getStack().getItem()));
                 return !list.isEmpty() && penguin.getEquippedStack(EquipmentSlot.MAINHAND).isEmpty();
             }
         }
 
         @Override
         public void tick() {
-            List<ItemEntity> list = penguin.world.getEntitiesByClass(ItemEntity.class, penguin.getBoundingBox().expand(8.0D, 8.0D, 8.0D), itemEntity -> temptItems.contains(itemEntity.getStack().getItem()));
+            List<ItemEntity> list = penguin.getWorld().getEntitiesByClass(ItemEntity.class, penguin.getBoundingBox().expand(8.0D, 8.0D, 8.0D), itemEntity -> temptItems.contains(itemEntity.getStack().getItem()));
             ItemStack itemstack = penguin.getEquippedStack(EquipmentSlot.MAINHAND);
             if (itemstack.isEmpty() && !list.isEmpty()) {
                 penguin.getNavigation().startMovingTo(list.get(0), 1.0F);
@@ -437,7 +454,7 @@ public class Penguin extends TameableEntity {
 
         @Override
         public void start() {
-            List<ItemEntity> list = penguin.world.getEntitiesByClass(ItemEntity.class, penguin.getBoundingBox().expand(8.0D, 8.0D, 8.0D), itemEntity -> temptItems.contains(itemEntity.getStack().getItem()));
+            List<ItemEntity> list = penguin.getWorld().getEntitiesByClass(ItemEntity.class, penguin.getBoundingBox().expand(8.0D, 8.0D, 8.0D), itemEntity -> temptItems.contains(itemEntity.getStack().getItem()));
             if (!list.isEmpty()) {
                 penguin.getNavigation().startMovingTo(list.get(0), 1.0F);
             }

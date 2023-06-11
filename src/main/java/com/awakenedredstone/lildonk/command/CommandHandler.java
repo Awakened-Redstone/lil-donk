@@ -1,6 +1,5 @@
 package com.awakenedredstone.lildonk.command;
 
-import com.awakenedredstone.lildonk.LilDonk;
 import com.awakenedredstone.lildonk.config.Config;
 import com.awakenedredstone.lildonk.config.ConfigManager;
 import com.awakenedredstone.lildonk.entity.Penguin;
@@ -9,7 +8,6 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -46,13 +44,10 @@ public class CommandHandler {
         ServerCommandSource source = context.getSource();
         Config.getInstance().donkEnabled = !Config.getInstance().donkEnabled;
         if (Config.getInstance().donkEnabled) {
-            source.sendFeedback(Text.of("Lil' Donk enabled"), false);
+            source.sendFeedback(() -> Text.of("Lil' Donk enabled"), false);
             spawnDonkEntity(source);
         } else {
-            source.sendFeedback(Text.of("Lil' Donk disabled"), false);
-            LilDonk.THE_PENGUIN.forEach((world, penguin) -> {
-                penguin.remove(Entity.RemovalReason.DISCARDED);
-            });
+            source.sendFeedback(() -> Text.of("Lil' Donk disabled"), false);
         }
         ConfigManager.saveConfig();
         return 1;
@@ -69,6 +64,5 @@ public class CommandHandler {
             penguin.updatePosition(world.getSpawnPos().getX(), world.getSpawnPos().getY(), world.getSpawnPos().getZ());
         }
         world.spawnEntity(penguin);
-        LilDonk.THE_PENGUIN.put(world, penguin);
     }
 }

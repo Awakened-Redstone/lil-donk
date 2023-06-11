@@ -11,7 +11,6 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
-import org.jetbrains.annotations.NotNull;
 
 public class Registrar {
     public static final EntityType<Penguin> PENGUIN = registerEntityType("penguin", Penguin::new, SpawnGroup.CREATURE, 0.7F, 0.9F, 10);
@@ -23,7 +22,6 @@ public class Registrar {
         LilDonk.LOGGER.debug("Registering entity types");
     }
 
-    @NotNull
     public static <T extends Entity> EntityType<T> registerEntityType(String name, EntityType.EntityFactory<T> factory, SpawnGroup category, float width, float height, int clientTrackingRange) {
         return Registry.register(Registries.ENTITY_TYPE, new Identifier(LilDonk.MOD_ID, name), FabricEntityTypeBuilder.create(category, factory).dimensions(EntityDimensions.changing(width, height)).trackRangeChunks(clientTrackingRange).build());
     }
