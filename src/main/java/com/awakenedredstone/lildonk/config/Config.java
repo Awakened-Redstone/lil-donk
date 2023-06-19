@@ -10,6 +10,10 @@ public class Config {
     @SerializedName("donk_enabled")
     public Boolean donkEnabled;
 
+    @Expose
+    @SerializedName("donk_volume")
+    public Integer donkVolume;
+
     private Config() {
     }
 

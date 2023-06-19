@@ -18,6 +18,7 @@ public class ConfigManager {
         Config config = load();
 
         if (config.donkEnabled == null) config.donkEnabled = true;
+        if (config.donkVolume == null) config.donkVolume = 100;
 
         Config.update(config);
         save();

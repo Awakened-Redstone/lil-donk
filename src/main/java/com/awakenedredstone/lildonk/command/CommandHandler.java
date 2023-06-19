@@ -5,6 +5,7 @@ import com.awakenedredstone.lildonk.config.ConfigManager;
 import com.awakenedredstone.lildonk.entity.Penguin;
 import com.awakenedredstone.lildonk.registry.Registrar;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
@@ -19,6 +20,7 @@ public class CommandHandler {
         CommandRegistrationCallback.EVENT.register(((dispatcher, registryAccess, environment) -> {
             registerDonkToggleCommand(dispatcher);
             registerDonkSpawnCommand(dispatcher);
+            registerDonkVolumeCommand(dispatcher);
         }));
     }
 
@@ -30,6 +32,29 @@ public class CommandHandler {
     private static void registerDonkSpawnCommand(CommandDispatcher<ServerCommandSource> dispatcher) {
         LiteralArgumentBuilder<ServerCommandSource> builder = CommandManager.literal("spawndonk").executes(CommandHandler::donkSpawn);
         dispatcher.register(builder);
+    }
+
+    private static void registerDonkVolumeCommand(CommandDispatcher<ServerCommandSource> dispatcher) {
+        LiteralArgumentBuilder<ServerCommandSource> builder = CommandManager.literal("donkvolume")
+                .executes(CommandHandler::getDonkVolume)
+                .then(CommandManager.argument("volume", IntegerArgumentType.integer(0, 100))
+                        .executes(CommandHandler::setDonkVolume));
+        dispatcher.register(builder);
+    }
+
+    private static int setDonkVolume(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        int volume = IntegerArgumentType.getInteger(context, "volume");
+        Config.getInstance().donkVolume = volume;
+        source.sendFeedback(() -> Text.of("Lil' Donk volume set to " + volume), false);
+        ConfigManager.saveConfig();
+        return 1;
+    }
+
+    private static int getDonkVolume(CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        source.sendFeedback(() -> Text.of("Lil' Donk volume is " + Config.getInstance().donkVolume), false);
+        return 1;
     }
 
     private static int donkSpawn(CommandContext<ServerCommandSource> context) {

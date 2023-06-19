@@ -190,7 +190,7 @@ public class Penguin extends TameableEntity {
                     }
                     this.ticksSinceEaten = 0;
                 } else if (this.ticksSinceEaten > 560 && this.random.nextFloat() < 0.1f) {
-                    this.playSound(this.getEatSound(stack), 1.0f, 1.0f);
+                    this.playSound(this.getEatSound(stack), Config.getInstance().donkVolume / 100f, 1.0f);
                     this.getWorld().sendEntityStatus(this, (byte) 45);
                 }
             }
@@ -278,6 +278,11 @@ public class Penguin extends TameableEntity {
     @Override
     protected SoundEvent getDeathSound() {
         return Registrar.PENGUIN_DEATH;
+    }
+
+    @Override
+    protected float getSoundVolume() {
+        return Config.getInstance().donkVolume / 100f;
     }
 
     @Override
